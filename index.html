@@ -369,14 +369,108 @@ main{flex:1;padding:16px;padding-bottom:80px;overflow-y:auto}
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ========== Login Screen ========== */
+.login-overlay{
+  position:fixed;inset:0;background:var(--bg);z-index:500;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  padding:24px;transition:transform .4s,opacity .4s;
+}
+.login-overlay.hidden{transform:scale(0.95);opacity:0;pointer-events:none}
+.login-card{
+  width:100%;max-width:360px;text-align:center;
+  padding:32px 24px;background:var(--card-bg);border-radius:20px;
+  box-shadow:var(--card-shadow);
+}
+.login-card .login-icon{font-size:3.5rem;margin-bottom:12px}
+.login-card h2{font-size:1.3rem;margin-bottom:4px;color:var(--text)}
+.login-card .login-sub{font-size:0.82rem;color:var(--text-secondary);margin-bottom:24px}
+.login-card input{
+  width:100%;padding:14px 16px;border:2px solid var(--border);
+  border-radius:12px;font-size:1rem;margin-bottom:12px;
+  outline:none;background:var(--input-bg);color:var(--text);
+  transition:border-color .2s;
+}
+.login-card input:focus{border-color:var(--primary)}
+.login-card .login-btn{
+  width:100%;padding:14px;border:none;border-radius:12px;
+  background:var(--primary);color:#fff;font-size:1.05rem;font-weight:600;
+  cursor:pointer;margin-top:4px;transition:all .2s;
+}
+.login-card .login-btn:hover{opacity:0.9}
+.login-card .login-btn:active{transform:scale(0.97)}
+.login-error{color:var(--danger);font-size:0.82rem;margin-top:10px;min-height:20px}
+.login-hint{font-size:0.75rem;color:var(--text-secondary);margin-top:16px;opacity:0.7}
+
+/* ========== Admin Panel ========== */
+.admin-modal .modal-box{max-width:440px;max-height:90vh;overflow-y:auto}
+.admin-section{margin-bottom:20px}
+.admin-section h4{font-size:0.9rem;color:var(--text-secondary);margin-bottom:8px;
+  text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px}
+.user-list{list-style:none}
+.user-list li{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 12px;background:var(--bg-secondary);border-radius:10px;
+  margin-bottom:6px;gap:8px;flex-wrap:wrap;
+}
+.user-list li .user-info{flex:1;min-width:0}
+.user-list li .user-name{font-weight:600;font-size:0.9rem;color:var(--text)}
+.user-list li .user-meta{font-size:0.7rem;color:var(--text-secondary)}
+.user-list li .user-actions{display:flex;gap:4px}
+.admin-inline-form{display:flex;gap:6px;margin-bottom:8px}
+.admin-inline-form input{
+  flex:1;padding:10px 12px;border:2px solid var(--border);
+  border-radius:10px;font-size:0.9rem;outline:none;
+  background:var(--input-bg);color:var(--text);
+}
+.admin-inline-form input:focus{border-color:var(--primary)}
+
+/* ========== Header User Info ========== */
+.user-badge{
+  display:flex;align-items:center;gap:6px;font-size:0.78rem;
+  color:var(--text-secondary);font-weight:500;
+}
+.user-badge .user-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--success);
+  flex-shrink:0;
+}
+.admin-badge{
+  background:var(--warning);color:#fff;font-size:0.6rem;
+  padding:2px 6px;border-radius:8px;font-weight:600;
+}
+.logout-btn{
+  background:none;border:1px solid var(--border);color:var(--text-secondary);
+  padding:4px 10px;border-radius:8px;font-size:0.73rem;cursor:pointer;
+  transition:all .2s;white-space:nowrap;
+}
+.logout-btn:hover{background:var(--danger-light);color:var(--danger);border-color:var(--danger)}
 </style>
 </head>
 <body>
+<!-- Login Screen -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-icon">📘</div>
+    <h2>单词记忆本</h2>
+    <p class="login-sub">请使用管理员分配的账号登录</p>
+    <input type="text" id="loginUsername" placeholder="用户名" autocomplete="username" autocapitalize="none">
+    <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password">
+    <button class="login-btn" id="loginBtn">登 录</button>
+    <div class="login-error" id="loginError"></div>
+    <p class="login-hint">默认管理员账号：admin / admin123</p>
+  </div>
+</div>
+
 <div class="app-container">
   <!-- Header -->
   <header>
     <h1><span class="icon">📘</span>单词记忆本</h1>
     <div class="header-actions">
+      <span class="user-badge" id="userBadge" style="display:none">
+        <span class="user-dot"></span><span id="headerUsername"></span>
+        <span class="admin-badge" id="adminBadge" style="display:none">管理</span>
+      </span>
+      <button class="logout-btn" id="logoutBtn" style="display:none" title="退出登录">退出</button>
       <span id="ebbinghausBadge" title="今日建议复习">🔔 <span id="ebbinghausCount">0</span></span>
       <button id="themeToggle" title="切换主题">🌓</button>
     </div>
@@ -530,6 +624,9 @@ main{flex:1;padding:16px;padding-bottom:80px;overflow-y:auto}
     <button class="nav-btn" data-tab="backup">
       <span class="nav-icon">💾</span>数据备份
     </button>
+    <button class="nav-btn" data-tab="admin" id="adminNavBtn" style="display:none">
+      <span class="nav-icon">👥</span>账号管理
+    </button>
   </nav>
 </div>
 
@@ -553,6 +650,39 @@ main{flex:1;padding:16px;padding-bottom:80px;overflow-y:auto}
   </div>
 </div>
 
+<!-- Admin Panel Modal -->
+<div class="modal-overlay hidden admin-modal" id="adminModal">
+  <div class="modal-box">
+    <h3>⚙️ 账号管理</h3>
+
+    <div class="admin-section">
+      <h4>👤 创建子账号</h4>
+      <div class="admin-inline-form">
+        <input type="text" id="newUsername" placeholder="新用户名" autocomplete="off" autocapitalize="none">
+        <input type="text" id="newUserPassword" placeholder="密码" autocomplete="off">
+        <button class="btn btn-primary btn-small" id="createUserBtn">创建</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h4>📋 现有用户 (<span id="userCount">0</span>)</h4>
+      <ul class="user-list" id="userList"></ul>
+    </div>
+
+    <div class="admin-section">
+      <h4>🔒 修改管理员密码</h4>
+      <div class="admin-inline-form">
+        <input type="password" id="newAdminPassword" placeholder="新密码">
+        <button class="btn btn-primary btn-small" id="changeAdminPwdBtn">修改</button>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn btn-outline" id="closeAdminBtn">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -563,13 +693,19 @@ main{flex:1;padding:16px;padding-bottom:80px;overflow-y:auto}
    ================================================================= */
 
 // ==================== CONSTANTS ====================
-const STORAGE_KEY = 'wordbook_data_v2';
+const ACCOUNTS_KEY = 'wordbook_accounts';
 const EBBINGHAUS_INTERVALS = [1, 2, 4, 7, 15, 30];
+const DEFAULT_ADMIN = { username: 'admin', password: 'admin123' };
 // ==================== STATE ====================
 let appData = null;
+let authData = null; // { admin, users, currentUser }
 let reviewSession = null; // { words: [], currentIndex: 0, known: 0, unknown: 0, unknownWords: [] }
 let deferredPrompt = null;
 let pendingManualWord = null; // English word waiting for manual translation
+
+function getUserStorageKey(username) {
+  return 'wordbook_data_' + username;
+}
 
 // ==================== UTILITY FUNCTIONS ====================
 function todayStr() {
@@ -603,29 +739,199 @@ function getWeekStartStr() {
   return monday.getFullYear() + '-' + String(monday.getMonth() + 1).padStart(2, '0') + '-' + String(monday.getDate()).padStart(2, '0');
 }
 
-// ==================== DATA PERSISTENCE ====================
-function loadData() {
+// ==================== AUTH SYSTEM ====================
+function loadAuthData() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    var raw = localStorage.getItem(ACCOUNTS_KEY);
+    if (raw) { var d = JSON.parse(raw); if (d.admin && d.users) return d; }
+  } catch (e) {}
+  return null;
+}
+
+function saveAuthData() {
+  try { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(authData)); } catch (e) {}
+}
+
+function initAuth() {
+  authData = loadAuthData();
+  if (!authData) {
+    // First time — migrate old data to admin account if exists
+    authData = {
+      admin: { username: DEFAULT_ADMIN.username, password: DEFAULT_ADMIN.password },
+      users: [],
+      currentUser: null
+    };
+    // Try to migrate old v2 data to admin
+    try {
+      var oldRaw = localStorage.getItem('wordbook_data_v2');
+      if (oldRaw) {
+        var oldData = JSON.parse(oldRaw);
+        if (oldData.words && Array.isArray(oldData.words)) {
+          localStorage.setItem(getUserStorageKey('admin'), JSON.stringify(oldData));
+          localStorage.removeItem('wordbook_data_v2'); // clean old key
+        }
+      }
+    } catch (e) {}
+    saveAuthData();
+  }
+  // Auto-login if currentUser is set
+  if (authData.currentUser) {
+    loadUserData(authData.currentUser);
+    return true;
+  }
+  return false;
+}
+
+function loadUserData(username) {
+  try {
+    var raw = localStorage.getItem(getUserStorageKey(username));
     if (raw) {
-      const parsed = JSON.parse(raw);
+      var parsed = JSON.parse(raw);
       if (parsed.words && Array.isArray(parsed.words) && parsed.settings) {
-        return parsed;
+        appData = parsed;
+        return;
       }
     }
-  } catch (e) { /* corrupted data */ }
-  return {
+  } catch (e) {}
+  appData = {
     words: [],
     settings: { theme: 'light', reviewMode: 'sequential', reviewCount: 100 }
   };
 }
 
+function isAdmin() {
+  return authData && authData.currentUser === authData.admin.username;
+}
+
+function login(username, password) {
+  username = username.trim();
+  if (!username || !password) return '请输入用户名和密码';
+  if (username === authData.admin.username) {
+    if (password === authData.admin.password) {
+      authData.currentUser = username;
+      saveAuthData();
+      loadUserData(username);
+      return null; // success
+    }
+    return '密码错误';
+  }
+  var user = null;
+  for (var i = 0; i < authData.users.length; i++) {
+    if (authData.users[i].username === username) { user = authData.users[i]; break; }
+  }
+  if (!user) return '账号不存在，请联系管理员创建';
+  if (user.password !== password) return '密码错误';
+  authData.currentUser = username;
+  saveAuthData();
+  loadUserData(username);
+  return null; // success
+}
+
+function logout() {
+  authData.currentUser = null;
+  saveAuthData();
+  appData = null;
+  resetReviewUI();
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = '';
+  updateHeaderUI();
+}
+
+// ==================== ADMIN FUNCTIONS ====================
+function adminCreateUser(username, password) {
+  username = username.trim();
+  if (!username || !password) return '用户名和密码不能为空';
+  if (username === authData.admin.username) return '不能使用管理员同名账号';
+  for (var i = 0; i < authData.users.length; i++) {
+    if (authData.users[i].username === username) return '该用户名已存在';
+  }
+  authData.users.push({
+    username: username,
+    password: password,
+    createdAt: todayStr()
+  });
+  saveAuthData();
+  // Initialize empty data for new user
+  localStorage.setItem(getUserStorageKey(username), JSON.stringify({
+    words: [],
+    settings: { theme: 'light', reviewMode: 'sequential', reviewCount: 100 }
+  }));
+  return null; // success
+}
+
+function adminDeleteUser(username) {
+  authData.users = authData.users.filter(function (u) { return u.username !== username; });
+  saveAuthData();
+  localStorage.removeItem(getUserStorageKey(username));
+}
+
+function adminResetPassword(username, newPassword) {
+  if (!newPassword) return '密码不能为空';
+  for (var i = 0; i < authData.users.length; i++) {
+    if (authData.users[i].username === username) {
+      authData.users[i].password = newPassword;
+      saveAuthData();
+      return null;
+    }
+  }
+  return '用户不存在';
+}
+
+function adminChangePassword(newPassword) {
+  if (!newPassword) return '密码不能为空';
+  authData.admin.password = newPassword;
+  saveAuthData();
+  return null;
+}
+
+function renderAdminPanel() {
+  document.getElementById('userCount').textContent = authData.users.length;
+  var listHtml = '';
+  authData.users.forEach(function (u) {
+    var wordCount = 0;
+    try {
+      var raw = localStorage.getItem(getUserStorageKey(u.username));
+      if (raw) wordCount = JSON.parse(raw).words.length;
+    } catch (e) {}
+    listHtml += '<li>' +
+      '<div class="user-info">' +
+        '<div class="user-name">' + escapeHTML(u.username) + '</div>' +
+        '<div class="user-meta">📅 ' + u.createdAt + ' · 📝 ' + wordCount + ' 词</div>' +
+      '</div>' +
+      '<div class="user-actions">' +
+        '<button class="btn btn-outline btn-small reset-pwd-btn" data-user="' + u.username + '">🔑 重置密码</button>' +
+        '<button class="btn btn-danger btn-small delete-user-btn" data-user="' + u.username + '">🗑️</button>' +
+      '</div>' +
+    '</li>';
+  });
+  if (!listHtml) listHtml = '<li style="color:var(--text-secondary);text-align:center;padding:16px">暂无子账号</li>';
+  document.getElementById('userList').innerHTML = listHtml;
+  document.getElementById('adminModal').classList.remove('hidden');
+}
+
+// ==================== DATA PERSISTENCE ====================
 function saveData() {
+  if (!authData || !authData.currentUser) return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+    localStorage.setItem(getUserStorageKey(authData.currentUser), JSON.stringify(appData));
   } catch (e) {
     showToast('存储空间不足！请导出数据备份后清理旧数据', 'error');
   }
+}
+
+function updateHeaderUI() {
+  var loggedIn = authData && authData.currentUser;
+  document.getElementById('userBadge').style.display = loggedIn ? 'flex' : 'none';
+  document.getElementById('logoutBtn').style.display = loggedIn ? '' : 'none';
+  document.getElementById('adminBadge').style.display = isAdmin() ? '' : 'none';
+  if (loggedIn) {
+    document.getElementById('headerUsername').textContent = authData.currentUser;
+  }
+  // Show/hide admin nav btn
+  var adminNav = document.getElementById('adminNavBtn');
+  if (adminNav) adminNav.style.display = isAdmin() ? '' : 'none';
 }
 
 // ==================== TOAST ====================
@@ -706,8 +1012,9 @@ function filterWords(filterType) {
 // ==================== IMPORT / EXPORT ====================
 function exportData() {
   var exportObj = {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
+    username: authData ? authData.currentUser : 'unknown',
     words: appData.words
   };
   var json = JSON.stringify(exportObj, null, 2);
@@ -715,7 +1022,7 @@ function exportData() {
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = 'wordbook-backup-' + todayStr() + '.json';
+  a.download = 'wordbook-' + (authData ? authData.currentUser : 'backup') + '-' + todayStr() + '.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1210,6 +1517,11 @@ document.querySelector('.bottom-nav').addEventListener('click', function (e) {
 });
 
 function switchTab(tabName) {
+  // Admin tab opens modal instead
+  if (tabName === 'admin') {
+    renderAdminPanel();
+    return;
+  }
   // Update nav
   document.querySelectorAll('.nav-btn').forEach(function (b) { b.classList.remove('active'); });
   var navBtn = document.querySelector('.nav-btn[data-tab="' + tabName + '"]');
@@ -1274,8 +1586,27 @@ function isIOSStandalone() {
 
 // ==================== INITIALIZATION ====================
 function init() {
-  // Load data
-  appData = loadData();
+  // Init auth system (migrate old data if needed)
+  var autoLoggedIn = initAuth();
+
+  if (!authData || !authData.currentUser) {
+    // Show login screen
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    applyTheme();
+    setupServiceWorker();
+    return;
+  }
+
+  // User is logged in — load data already done by initAuth
+  showApp();
+
+  if (autoLoggedIn) {
+    console.log('📘 单词记忆本 PWA 已就绪 (自动登录)');
+  }
+}
+
+function showApp() {
+  document.getElementById('loginOverlay').classList.add('hidden');
 
   // Apply theme
   applyTheme();
@@ -1293,6 +1624,7 @@ function init() {
 
   // Initial render
   refreshAllUI();
+  updateHeaderUI();
 
   // Hide install banner if already in standalone mode
   if (isIOSStandalone() || window.matchMedia('(display-mode: standalone)').matches) {
@@ -1300,10 +1632,89 @@ function init() {
   }
 
   console.log('📘 单词记忆本 PWA 已就绪');
+  console.log('   👤 用户:', authData.currentUser, isAdmin() ? '(管理员)' : '');
   console.log('   📝 单词总数:', appData.words.length);
   console.log('   🎨 主题:', appData.settings.theme);
   console.log('   📱 独立模式:', isIOSStandalone() || window.matchMedia('(display-mode: standalone)').matches);
 }
+
+// ==================== AUTH EVENT HANDLERS ====================
+document.getElementById('loginBtn').addEventListener('click', function () {
+  var username = document.getElementById('loginUsername').value;
+  var password = document.getElementById('loginPassword').value;
+  var err = login(username, password);
+  if (err) {
+    document.getElementById('loginError').textContent = '⚠️ ' + err;
+  } else {
+    document.getElementById('loginError').textContent = '';
+    showApp();
+  }
+});
+
+document.getElementById('loginPassword').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', function () {
+  if (confirm('确定要退出登录吗？')) logout();
+});
+
+// --- Admin Panel ---
+document.getElementById('adminNavBtn').addEventListener('click', function () {
+  renderAdminPanel();
+});
+
+document.getElementById('closeAdminBtn').addEventListener('click', function () {
+  document.getElementById('adminModal').classList.add('hidden');
+});
+
+document.getElementById('adminModal').addEventListener('click', function (e) {
+  if (e.target === this) this.classList.add('hidden');
+});
+
+// Create user
+document.getElementById('createUserBtn').addEventListener('click', function () {
+  var username = document.getElementById('newUsername').value;
+  var password = document.getElementById('newUserPassword').value;
+  var err = adminCreateUser(username, password);
+  if (err) { showToast(err, 'error'); return; }
+  showToast('账号「' + username + '」创建成功！', 'success');
+  document.getElementById('newUsername').value = '';
+  document.getElementById('newUserPassword').value = '';
+  renderAdminPanel();
+});
+
+// Delete user & reset password (delegation)
+document.getElementById('userList').addEventListener('click', function (e) {
+  var delBtn = e.target.closest('.delete-user-btn');
+  var resetBtn = e.target.closest('.reset-pwd-btn');
+  if (delBtn) {
+    var username = delBtn.dataset.user;
+    if (username === authData.currentUser) { showToast('不能删除当前登录的账号', 'error'); return; }
+    if (confirm('确定删除账号「' + username + '」吗？该账号的所有单词数据将被永久删除，不可恢复！')) {
+      adminDeleteUser(username);
+      showToast('账号「' + username + '」已删除', 'success');
+      renderAdminPanel();
+    }
+  }
+  if (resetBtn) {
+    var uname = resetBtn.dataset.user;
+    var newPwd = prompt('为「' + uname + '」设置新密码：');
+    if (!newPwd) return;
+    var err2 = adminResetPassword(uname, newPwd);
+    if (err2) { showToast(err2, 'error'); return; }
+    showToast('「' + uname + '」密码已重置', 'success');
+  }
+});
+
+// Change admin password
+document.getElementById('changeAdminPwdBtn').addEventListener('click', function () {
+  var newPwd = document.getElementById('newAdminPassword').value;
+  var err = adminChangePassword(newPwd);
+  if (err) { showToast(err, 'error'); return; }
+  showToast('管理员密码已修改！', 'success');
+  document.getElementById('newAdminPassword').value = '';
+});
 
 // Start the app
 init();
