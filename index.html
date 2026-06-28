@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="单词本">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#4a90d9">
+<title>单词记忆本</title>
+<style>
+/* ========== CSS Variables & Reset ========== */
+:root {
+  --bg: #ffffff;
+  --bg-secondary: #f5f5f7;
+  --text: #1c1c1e;
+  --text-secondary: #6e6e73;
+  --primary: #4a90d9;
+  --primary-light: #e8f0fb;
+  --danger: #e74c3c;
+  --danger-light: #fde8e5;
+  --success: #27ae60;
+  --success-light: #e8f8ef;
+  --warning: #f39c12;
+  --warning-light: #fef5e7;
+  --border: #e0e0e4;
+  --card-bg: #ffffff;
+  --card-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --nav-bg: #ffffff;
+  --nav-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  --overlay: rgba(0,0,0,0.4);
+  --banner-bg: #1c1c1e;
+  --banner-text: #ffffff;
+  --input-bg: #f5f5f7;
+  --badge-bg: #e74c3c;
+  --badge-text: #ffffff;
+}
+.dark {
+  --bg: #1a1a2e;
+  --bg-secondary: #16213e;
+  --text: #e0e0e0;
+  --text-secondary: #a0a0b0;
+  --primary: #5fa3e0;
+  --primary-light: #1a2a44;
+  --danger: #e74c3c;
+  --danger-light: #2a1a1e;
+  --success: #2ecc71;
+  --success-light: #1a2a20;
+  --warning: #f1c40f;
+  --warning-light: #2a2818;
+  --border: #2a2a4a;
+  --card-bg: #1e2a45;
+  --card-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  --nav-bg: #16213e;
+  --nav-shadow: 0 -2px 12px rgba(0,0,0,0.3);
+  --overlay: rgba(0,0,0,0.6);
+  --banner-bg: #0a0a1a;
+  --banner-text: #e0e0e0;
+  --input-bg: #16213e;
+  --badge-bg: #e74c3c;
+  --badge-text: #ffffff;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;min-height:100dvh;
+  transition:background .3s,color .3s;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-font-smoothing:antialiased;
+}
+button{touch-action:manipulation}
+
+/* ========== Layout ========== */
+.app-container{max-width:600px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+header{
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);background:var(--bg);
+  position:sticky;top:0;z-index:100;transition:background .3s;
+}
+header h1{font-size:1.25rem;font-weight:700;display:flex;align-items:center;gap:8px}
+header h1 .icon{font-size:1.5rem}
+.header-actions{display:flex;align-items:center;gap:8px}
+#ebbinghausBadge{
+  background:var(--badge-bg);color:var(--badge-text);
+  font-size:0.7rem;font-weight:700;padding:3px 8px;border-radius:12px;
+  cursor:pointer;white-space:nowrap;display:none;animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+#themeToggle{
+  background:none;border:1px solid var(--border);font-size:1.2rem;
+  width:36px;height:36px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .3s;
+}
+#themeToggle:hover{background:var(--bg-secondary)}
+
+main{flex:1;padding:16px;padding-bottom:80px;overflow-y:auto}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ========== Bottom Nav ========== */
+.bottom-nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:600px;display:flex;
+  background:var(--nav-bg);border-top:1px solid var(--border);
+  box-shadow:var(--nav-shadow);z-index:100;padding:6px 0;
+  padding-bottom:max(6px,env(safe-area-inset-bottom));
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 4px;border:none;background:none;cursor:pointer;
+  color:var(--text-secondary);font-size:0.65rem;font-weight:500;
+  transition:color .2s;position:relative;
+}
+.nav-btn .nav-icon{font-size:1.35rem;line-height:1}
+.nav-btn.active{color:var(--primary);font-weight:600}
+
+/* ========== Form Elements ========== */
+.input-group{display:flex;gap:8px;margin-bottom:12px}
+.input-group input{
+  flex:1;padding:12px 14px;border:2px solid var(--border);
+  border-radius:12px;font-size:1rem;background:var(--input-bg);color:var(--text);
+  outline:none;transition:border-color .2s;
+}
+.input-group input:focus{border-color:var(--primary)}
+.btn{
+  padding:10px 18px;border:none;border-radius:12px;font-size:0.95rem;font-weight:600;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px)}
+.btn-primary:active{transform:scale(0.97)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-outline{
+  background:transparent;border:2px solid var(--border);color:var(--text);
+}
+.btn-outline:hover{background:var(--bg-secondary)}
+.btn-small{padding:6px 12px;font-size:0.8rem;border-radius:8px}
+.btn-icon{
+  background:none;border:none;font-size:1.25rem;cursor:pointer;padding:4px 8px;
+  border-radius:8px;transition:background .2s;
+}
+.btn-icon:hover{background:var(--bg-secondary)}
+
+/* ========== Filter Pills ========== */
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filter-pill{
+  padding:7px 15px;border-radius:20px;border:1.5px solid var(--border);
+  background:var(--bg);color:var(--text-secondary);font-size:0.82rem;
+  cursor:pointer;font-weight:500;transition:all .2s;
+}
+.filter-pill:hover{background:var(--bg-secondary)}
+.filter-pill.active{
+  background:var(--primary);color:#fff;border-color:var(--primary);
+}
+
+/* ========== Word List ========== */
+.word-list{list-style:none}
+.word-item{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;
+  background:var(--card-bg);border-radius:12px;margin-bottom:8px;
+  box-shadow:var(--card-shadow);transition:transform .2s,box-shadow .2s;
+}
+.word-item:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.12)}
+.word-info{flex:1;min-width:0}
+.word-info .english{font-size:1.05rem;font-weight:600;color:var(--text)}
+.word-info .chinese{font-size:0.9rem;color:var(--text-secondary);margin-top:2px}
+.word-info .meta{font-size:0.72rem;color:var(--text-secondary);margin-top:3px;opacity:0.7}
+.word-item .delete-btn{
+  background:none;border:none;font-size:1.2rem;cursor:pointer;padding:8px;
+  border-radius:8px;opacity:0.5;transition:all .2s;flex-shrink:0;
+}
+.word-item .delete-btn:hover{opacity:1;background:var(--danger-light);color:var(--danger)}
+.word-count-info{font-size:0.82rem;color:var(--text-secondary);margin-bottom:12px}
+
+/* ========== Empty State ========== */
+.empty-state{
+  text-align:center;padding:48px 24px;color:var(--text-secondary);
+}
+.empty-state .empty-icon{font-size:4rem;margin-bottom:16px}
+.empty-state h3{font-size:1.15rem;margin-bottom:8px;color:var(--text)}
+.empty-state p{font-size:0.9rem;line-height:1.6}
+
+/* ========== Review Center ========== */
+.review-config{margin-bottom:20px}
+.review-config .section-title{font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+.mode-toggle{display:flex;gap:0;margin-bottom:16px;border-radius:12px;overflow:hidden;border:2px solid var(--border)}
+.mode-toggle button{
+  flex:1;padding:10px;border:none;background:var(--bg);color:var(--text-secondary);
+  font-size:0.9rem;cursor:pointer;font-weight:500;transition:all .2s;
+}
+.mode-toggle button.active{background:var(--primary);color:#fff}
+.count-input-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.count-input-row input{
+  width:80px;padding:8px 12px;border:2px solid var(--border);
+  border-radius:10px;font-size:1rem;text-align:center;background:var(--input-bg);color:var(--text);
+  outline:none;
+}
+.count-input-row input:focus{border-color:var(--primary)}
+.count-input-row label{font-size:0.9rem;color:var(--text-secondary)}
+.start-review-btn{
+  width:100%;padding:14px;font-size:1.1rem;margin-top:8px;
+}
+
+/* ========== Flashcard ========== */
+.review-session{display:none}
+.review-session.active{display:block}
+.review-progress{
+  text-align:center;font-size:0.9rem;color:var(--text-secondary);margin-bottom:12px;
+  font-weight:500;
+}
+.review-progress .progress-bar{
+  width:100%;height:6px;background:var(--border);border-radius:3px;
+  margin-top:8px;overflow:hidden;
+}
+.review-progress .progress-fill{
+  height:100%;background:var(--primary);border-radius:3px;transition:width .3s;
+}
+.flashcard-container{
+  perspective:1000px;width:100%;max-width:380px;
+  height:260px;margin:0 auto 20px;cursor:pointer;
+}
+.flashcard{
+  width:100%;height:100%;position:relative;
+  transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(0.4,0,0.2,1);
+}
+.flashcard.flipped{transform:rotateY(180deg)}
+.flashcard-face{
+  position:absolute;width:100%;height:100%;backface-visibility:hidden;
+  border-radius:20px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;
+  box-shadow:0 6px 24px rgba(0,0,0,0.12);
+}
+.flashcard-front{
+  background:var(--card-bg);z-index:2;
+  border:2px solid var(--border);
+}
+.flashcard-front .word-display{font-size:2.2rem;font-weight:700;color:var(--text);text-align:center;word-break:break-word}
+.flashcard-front .tap-hint{font-size:0.78rem;color:var(--text-secondary);margin-top:16px;opacity:0.6}
+.flashcard-front .speak-btn{
+  position:absolute;top:12px;right:12px;font-size:1.6rem;
+  background:none;border:none;cursor:pointer;padding:8px;border-radius:50%;
+  transition:background .2s;z-index:10;
+}
+.flashcard-front .speak-btn:hover{background:var(--bg-secondary)}
+.flashcard-back{
+  background:var(--primary);color:#fff;transform:rotateY(180deg);
+}
+.flashcard-back .meaning-display{font-size:2rem;font-weight:600;text-align:center;word-break:break-word}
+.flashcard-back .label-text{font-size:0.8rem;opacity:0.8;margin-bottom:8px}
+.review-actions{display:flex;gap:12px;justify-content:center;margin-top:8px}
+.review-actions button{
+  flex:1;max-width:180px;padding:14px 20px;border:none;border-radius:14px;
+  font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-know{background:var(--success);color:#fff}
+.btn-know:hover{opacity:0.9;transform:translateY(-2px)}
+.btn-unknown{background:var(--warning);color:#fff}
+.btn-unknown:hover{opacity:0.9;transform:translateY(-2px)}
+
+/* ========== Review Summary ========== */
+.review-summary{display:none;text-align:center;padding:20px}
+.review-summary.active{display:block}
+.review-summary h3{font-size:1.3rem;margin-bottom:16px}
+.summary-stats{display:flex;justify-content:center;gap:24px;margin-bottom:20px}
+.summary-stat{text-align:center}
+.summary-stat .stat-num{font-size:2rem;font-weight:700}
+.summary-stat .stat-label{font-size:0.82rem;color:var(--text-secondary);margin-top:4px}
+.summary-stat.known .stat-num{color:var(--success)}
+.summary-stat.unknown .stat-num{color:var(--warning)}
+.unknown-words-list{margin:16px 0;text-align:left}
+.unknown-words-list .tag{
+  display:inline-block;padding:4px 10px;margin:3px;
+  background:var(--warning-light);color:var(--warning);
+  border-radius:12px;font-size:0.82rem;font-weight:500;
+}
+
+/* ========== Backup Tab ========== */
+.backup-section{margin-bottom:24px}
+.backup-section h3{font-size:1rem;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.backup-card{
+  background:var(--card-bg);border-radius:14px;padding:20px;
+  box-shadow:var(--card-shadow);margin-bottom:12px;
+}
+.export-btn,.import-btn{
+  width:100%;padding:14px;font-size:1rem;margin-top:8px;
+}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-card{
+  background:var(--card-bg);border-radius:12px;padding:16px;
+  text-align:center;box-shadow:var(--card-shadow);
+}
+.stat-card .stat-value{font-size:1.8rem;font-weight:700;color:var(--primary)}
+.stat-card .stat-label{font-size:0.78rem;color:var(--text-secondary);margin-top:4px}
+
+/* ========== Install Banner ========== */
+.install-banner{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  width:calc(100% - 32px);max-width:568px;
+  background:var(--banner-bg);color:var(--banner-text);
+  border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:200;
+  transition:transform .3s,opacity .3s;
+}
+.install-banner.hidden{transform:translateX(-50%) translateY(120px);opacity:0;pointer-events:none}
+.install-banner span{flex:1;font-size:0.9rem;font-weight:500}
+.install-banner .install-btn{
+  background:var(--primary);color:#fff;border:none;
+  padding:8px 16px;border-radius:10px;font-size:0.85rem;font-weight:600;cursor:pointer;
+  white-space:nowrap;
+}
+.install-banner .dismiss-btn{
+  background:none;border:none;color:var(--banner-text);font-size:1.2rem;
+  cursor:pointer;padding:4px;opacity:0.6;
+}
+
+/* ========== Manual Input Modal ========== */
+.modal-overlay{
+  position:fixed;inset:0;background:var(--overlay);z-index:300;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.modal-overlay.hidden{display:none}
+.modal-box{
+  background:var(--bg);border-radius:16px;padding:24px;width:100%;max-width:400px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.2);
+}
+.modal-box h3{font-size:1.1rem;margin-bottom:8px}
+.modal-box p{font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px}
+.modal-box input{
+  width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;
+  font-size:1rem;outline:none;background:var(--input-bg);color:var(--text);
+  margin-bottom:12px;
+}
+.modal-box input:focus{border-color:var(--primary)}
+.modal-box .modal-actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* ========== Toast ========== */
+.toast{
+  position:fixed;top:20px;left:50%;transform:translateX(-50%);
+  background:#333;color:#fff;padding:10px 20px;border-radius:10px;
+  font-size:0.9rem;z-index:400;pointer-events:none;
+  opacity:0;transition:opacity .3s;
+}
+.toast.show{opacity:1}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+
+/* ========== Responsive ========== */
+@media(min-width:601px){
+  .app-container{border-left:1px solid var(--border);border-right:1px solid var(--border)}
+  .flashcard-container{height:300px}
+  .flashcard-front .word-display{font-size:2.6rem}
+  .flashcard-back .meaning-display{font-size:2.4rem}
+}
+
+/* ========== Loading Spinner ========== */
+.spinner{
+  display:inline-block;width:18px;height:18px;border:2px solid transparent;
+  border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ========== Scrollbar ========== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app-container">
+  <!-- Header -->
+  <header>
+    <h1><span class="icon">📘</span>单词记忆本</h1>
+    <div class="header-actions">
+      <span id="ebbinghausBadge" title="今日建议复习">🔔 <span id="ebbinghausCount">0</span></span>
+      <button id="themeToggle" title="切换主题">🌓</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Tab 1: 生词本 -->
+    <section id="tab-vocab" class="tab-content active">
+      <div class="input-group">
+        <input type="text" id="wordInput" placeholder="输入英文单词..." autocomplete="off" autocapitalize="none">
+        <button class="btn btn-primary" id="addWordBtn">添加</button>
+      </div>
+      <div class="filter-bar" id="vocabFilterBar">
+        <button class="filter-pill active" data-filter="all">全部单词</button>
+        <button class="filter-pill" data-filter="yesterday">昨天添加</button>
+        <button class="filter-pill" data-filter="week">本周添加</button>
+      </div>
+      <div class="word-count-info" id="wordCountInfo"></div>
+      <ul class="word-list" id="wordList"></ul>
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">📝</div>
+        <h3>开始背单词吧！</h3>
+        <p>在上方输入英文单词<br>自动获取中文翻译并保存</p>
+      </div>
+    </section>
+
+    <!-- Tab 2: 复习中心 -->
+    <section id="tab-review" class="tab-content">
+      <!-- Pre-review config -->
+      <div class="review-config" id="reviewConfig">
+        <div class="section-title">筛选范围</div>
+        <div class="filter-bar" id="reviewFilterBar">
+          <button class="filter-pill active" data-filter="all">全部单词</button>
+          <button class="filter-pill" data-filter="ebbinghaus">📅 艾宾浩斯</button>
+          <button class="filter-pill" data-filter="yesterday">昨天添加</button>
+          <button class="filter-pill" data-filter="week">本周添加</button>
+        </div>
+        <div class="section-title">复习模式</div>
+        <div class="mode-toggle" id="modeToggle">
+          <button class="active" data-mode="sequential">📋 顺序复习</button>
+          <button data-mode="random">🎲 随机复习</button>
+        </div>
+        <div class="count-input-row">
+          <label for="reviewCountInput">本次复习：</label>
+          <input type="number" id="reviewCountInput" value="100" min="1" max="999">
+          <label>个单词</label>
+        </div>
+        <button class="btn btn-primary start-review-btn" id="startReviewBtn">
+          🚀 开始复习
+        </button>
+      </div>
+      <!-- Review session -->
+      <div class="review-session" id="reviewSession">
+        <div class="review-progress">
+          <span id="progressText">1 / 20</span>
+          <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        </div>
+        <div class="flashcard-container" id="flashcardContainer">
+          <div class="flashcard" id="flashcard">
+            <div class="flashcard-face flashcard-front">
+              <button class="speak-btn" id="speakBtn" title="朗读">🔊</button>
+              <div class="word-display" id="wordDisplay">apple</div>
+              <div class="tap-hint">👆 点击翻转查看释义</div>
+            </div>
+            <div class="flashcard-face flashcard-back">
+              <div class="label-text">中文释义</div>
+              <div class="meaning-display" id="meaningDisplay">苹果</div>
+            </div>
+          </div>
+        </div>
+        <div class="review-actions">
+          <button class="btn-know" id="btnUnknown">🔄 还不熟</button>
+          <button class="btn-unknown" id="btnKnow">✅ 认识了</button>
+        </div>
+      </div>
+      <!-- Review summary -->
+      <div class="review-summary" id="reviewSummary">
+        <h3>🎉 复习完成！</h3>
+        <div class="summary-stats">
+          <div class="summary-stat known">
+            <div class="stat-num" id="knownCount">0</div>
+            <div class="stat-label">认识了</div>
+          </div>
+          <div class="summary-stat unknown">
+            <div class="stat-num" id="unknownCount">0</div>
+            <div class="stat-label">还不熟</div>
+          </div>
+        </div>
+        <div id="unknownWordsSection" style="display:none">
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px">需要加强的单词：</p>
+          <div class="unknown-words-list" id="unknownWordsList"></div>
+        </div>
+        <button class="btn btn-primary" id="backToConfigBtn">↩ 返回</button>
+      </div>
+    </section>
+
+    <!-- Tab 3: 数据备份 -->
+    <section id="tab-backup" class="tab-content">
+      <div class="backup-section">
+        <div class="backup-card">
+          <h3>💾 数据统计</h3>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="statTotal">0</div>
+              <div class="stat-label">单词总数</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statThisWeek">0</div>
+              <div class="stat-label">本周新增</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statNeedReview">0</div>
+              <div class="stat-label">需复习</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statTodayReview">0</div>
+              <div class="stat-label">今日已复习</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="backup-section">
+        <div class="backup-card">
+          <h3>📤 导出单词库</h3>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px">
+            将所有单词数据导出为 JSON 文件，可用于备份或迁移。
+          </p>
+          <button class="btn btn-primary export-btn" id="exportBtn">📥 导出 JSON 文件</button>
+        </div>
+        <div class="backup-card">
+          <h3>📥 导入单词库</h3>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px">
+            从之前导出的 JSON 文件导入单词。重复单词会合并，保留最新数据。
+          </p>
+          <input type="file" id="importFileInput" accept=".json" style="display:none">
+          <button class="btn btn-outline import-btn" id="importBtn">📂 选择 JSON 文件导入</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="vocab">
+      <span class="nav-icon">📝</span>生词本
+    </button>
+    <button class="nav-btn" data-tab="review">
+      <span class="nav-icon">📚</span>复习中心
+    </button>
+    <button class="nav-btn" data-tab="backup">
+      <span class="nav-icon">💾</span>数据备份
+    </button>
+  </nav>
+</div>
+
+<!-- Install Banner -->
+<div class="install-banner hidden" id="installBanner">
+  <span>📲 添加到主屏幕，随时随地背单词</span>
+  <button class="install-btn" id="installBtn">添加</button>
+  <button class="dismiss-btn" id="dismissBannerBtn">✕</button>
+</div>
+
+<!-- Manual Translation Modal -->
+<div class="modal-overlay hidden" id="manualModal">
+  <div class="modal-box">
+    <h3>📖 手动输入释义</h3>
+    <p id="manualModalWord">自动翻译失败，请手动输入中文释义：</p>
+    <input type="text" id="manualChineseInput" placeholder="输入中文释义..." autocomplete="off">
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="cancelManualBtn">取消</button>
+      <button class="btn btn-primary" id="confirmManualBtn">确认添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* =================================================================
+   单词记忆本 — 完整 PWA 背单词应用
+   所有数据存 localStorage，纯前端实现
+   ================================================================= */
+
+// ==================== CONSTANTS ====================
+const STORAGE_KEY = 'wordbook_data_v2';
+const EBBINGHAUS_INTERVALS = [1, 2, 4, 7, 15, 30];
+// ==================== STATE ====================
+let appData = null;
+let reviewSession = null; // { words: [], currentIndex: 0, known: 0, unknown: 0, unknownWords: [] }
+let deferredPrompt = null;
+let pendingManualWord = null; // English word waiting for manual translation
+
+// ==================== UTILITY FUNCTIONS ====================
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+function daysBetween(d1, d2) {
+  const [y1, m1, day1] = d1.split('-').map(Number);
+  const [y2, m2, day2] = d2.split('-').map(Number);
+  return Math.floor((new Date(y2, m2 - 1, day2) - new Date(y1, m1 - 1, day1)) / 86400000);
+}
+
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
+}
+
+function getYesterdayStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function getWeekStartStr() {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.getFullYear(), d.getMonth(), diff);
+  return monday.getFullYear() + '-' + String(monday.getMonth() + 1).padStart(2, '0') + '-' + String(monday.getDate()).padStart(2, '0');
+}
+
+// ==================== DATA PERSISTENCE ====================
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.words && Array.isArray(parsed.words) && parsed.settings) {
+        return parsed;
+      }
+    }
+  } catch (e) { /* corrupted data */ }
+  return {
+    words: [],
+    settings: { theme: 'light', reviewMode: 'sequential', reviewCount: 100 }
+  };
+}
+
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  } catch (e) {
+    showToast('存储空间不足！请导出数据备份后清理旧数据', 'error');
+  }
+}
+
+// ==================== TOAST ====================
+let toastTimer;
+function showToast(msg, type) {
+  if (type === void 0) type = '';
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + type + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2500);
+}
+
+// ==================== TRANSLATION API ====================
+async function translateWord(word) {
+  try {
+    var res = await fetch(
+      'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(word.trim()) + '&langpair=en|zh'
+    );
+    if (!res.ok) return null;
+    var data = await res.json();
+    if (data.responseData && data.responseData.translatedText && data.responseData.translatedText.trim()) {
+      var translated = data.responseData.translatedText.trim();
+      // If the API returns the same English word, it likely failed
+      if (translated.toLowerCase() === word.trim().toLowerCase()) return null;
+      return translated;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ==================== EBBINGHAUS LOGIC ====================
+function getEbbinghausDueWords() {
+  var today = todayStr();
+  return appData.words.filter(function (w) {
+    var daysSince = daysBetween(w.date, today);
+    return EBBINGHAUS_INTERVALS.indexOf(daysSince) !== -1 && w.reviews.indexOf(today) === -1;
+  });
+}
+
+function getNeedsReviewWords() {
+  return appData.words.filter(function (w) { return w.needsReview; });
+}
+
+// ==================== SPEECH API ====================
+function speakWord(word) {
+  if (!('speechSynthesis' in window)) {
+    showToast('您的浏览器不支持语音朗读', 'error');
+    return;
+  }
+  window.speechSynthesis.cancel();
+  var utterance = new SpeechSynthesisUtterance(word);
+  utterance.lang = 'en-US';
+  utterance.rate = 0.85;
+  utterance.pitch = 1;
+  window.speechSynthesis.speak(utterance);
+}
+
+// ==================== FILTER WORDS ====================
+function filterWords(filterType) {
+  var today = todayStr();
+  switch (filterType) {
+    case 'yesterday':
+      var yesterday = getYesterdayStr();
+      return appData.words.filter(function (w) { return w.date === yesterday; });
+    case 'week':
+      var weekStart = getWeekStartStr();
+      return appData.words.filter(function (w) { return w.date >= weekStart && w.date <= today; });
+    case 'ebbinghaus':
+      return getEbbinghausDueWords();
+    default:
+      return appData.words.slice();
+  }
+}
+
+// ==================== IMPORT / EXPORT ====================
+function exportData() {
+  var exportObj = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    words: appData.words
+  };
+  var json = JSON.stringify(exportObj, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'wordbook-backup-' + todayStr() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('导出成功！', 'success');
+}
+
+function importData(jsonText) {
+  try {
+    var imported = JSON.parse(jsonText);
+    var words = imported.words;
+    if (!words || !Array.isArray(words)) {
+      throw new Error('Invalid format');
+    }
+    var added = 0, updated = 0;
+    var existingMap = {};
+    appData.words.forEach(function (w) {
+      existingMap[w.english.toLowerCase()] = w;
+    });
+    words.forEach(function (iw) {
+      if (!iw.english || !iw.chinese) return;
+      var key = iw.english.toLowerCase();
+      var existing = existingMap[key];
+      if (existing) {
+        // Update: merge, keeping imported Chinese (latest import takes precedence)
+        existing.chinese = iw.chinese;
+        existing.date = iw.date || existing.date;
+        // Preserve review progress unless imported data is newer
+        if (iw.date && iw.date > existing.date) {
+          existing.needsReview = iw.needsReview || false;
+          existing.reviews = iw.reviews || [];
+        }
+        updated++;
+      } else {
+        appData.words.push({
+          id: iw.id || generateId(),
+          english: iw.english.trim(),
+          chinese: iw.chinese.trim(),
+          date: iw.date || todayStr(),
+          needsReview: iw.needsReview || false,
+          reviews: iw.reviews || []
+        });
+        added++;
+      }
+    });
+    saveData();
+    showToast('导入成功！新增 ' + added + ' 个，更新 ' + updated + ' 个', 'success');
+    refreshAllUI();
+    return true;
+  } catch (e) {
+    showToast('文件格式错误，无法导入', 'error');
+    return false;
+  }
+}
+
+// ==================== RENDER FUNCTIONS ====================
+function refreshAllUI() {
+  renderWordList();
+  updateEbbinghausBadge();
+  updateBackupStats();
+}
+
+function updateEbbinghausBadge() {
+  var due = getEbbinghausDueWords();
+  var needsReview = getNeedsReviewWords();
+  // Also include needsReview words as due
+  var totalDue = due.length;
+  needsReview.forEach(function (w) {
+    // Check if this word is already in the due list (by id)
+    var alreadyInDue = due.some(function (d) { return d.id === w.id; });
+    if (!alreadyInDue) totalDue++;
+  });
+  var badge = document.getElementById('ebbinghausBadge');
+  var countEl = document.getElementById('ebbinghausCount');
+  if (totalDue > 0) {
+    badge.style.display = 'inline';
+    countEl.textContent = totalDue + ' 个待复习';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderWordList() {
+  var activeFilter = document.querySelector('#vocabFilterBar .filter-pill.active');
+  var filterType = activeFilter ? activeFilter.dataset.filter : 'all';
+  var filtered = filterWords(filterType);
+  var listEl = document.getElementById('wordList');
+  var emptyEl = document.getElementById('emptyState');
+  var countEl = document.getElementById('wordCountInfo');
+  countEl.textContent = '共 ' + filtered.length + ' 个单词' + (filterType !== 'all' ? '（已筛选）' : '');
+
+  if (appData.words.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    countEl.textContent = '';
+  } else if (filtered.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    emptyEl.querySelector('h3').textContent = '没有匹配的单词';
+    emptyEl.querySelector('p').textContent = '尝试更换筛选条件或添加新单词';
+  } else {
+    emptyEl.style.display = 'none';
+    listEl.innerHTML = filtered.map(function (w) {
+      var needsBadge = w.needsReview ? ' <span style="background:var(--warning);color:#fff;font-size:0.65rem;padding:2px 6px;border-radius:8px;margin-left:6px">需复习</span>' : '';
+      return '<li class="word-item">' +
+        '<div class="word-info">' +
+          '<div class="english">' + escapeHTML(w.english) + needsBadge + '</div>' +
+          '<div class="chinese">' + escapeHTML(w.chinese) + '</div>' +
+          '<div class="meta">📅 ' + w.date + ' · 复习 ' + (w.reviews ? w.reviews.length : 0) + ' 次</div>' +
+        '</div>' +
+        '<button class="delete-btn" data-id="' + w.id + '" title="删除">🗑️</button>' +
+      '</li>';
+    }).join('');
+  }
+}
+
+function escapeHTML(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function updateBackupStats() {
+  var today = todayStr();
+  var weekStart = getWeekStartStr();
+  document.getElementById('statTotal').textContent = appData.words.length;
+  document.getElementById('statThisWeek').textContent = appData.words.filter(function (w) {
+    return w.date >= weekStart && w.date <= today;
+  }).length;
+  document.getElementById('statNeedReview').textContent = getEbbinghausDueWords().length + getNeedsReviewWords().filter(function (w, i, arr) {
+    return arr.findIndex(function (x) { return x.id === w.id; }) === i;
+  }).length;
+  document.getElementById('statTodayReview').textContent = appData.words.filter(function (w) {
+    return w.reviews && w.reviews.indexOf(today) !== -1;
+  }).length;
+}
+
+// ==================== REVIEW LOGIC ====================
+function startReview() {
+  var activeFilter = document.querySelector('#reviewFilterBar .filter-pill.active');
+  var filterType = activeFilter ? activeFilter.dataset.filter : 'all';
+  var reviewCount = parseInt(document.getElementById('reviewCountInput').value) || 100;
+  var mode = appData.settings.reviewMode;
+
+  // Get filtered words
+  var words = filterWords(filterType);
+
+  // Always include needsReview words
+  var needsReviewWords = getNeedsReviewWords();
+  var existingIds = {};
+  words.forEach(function (w) { existingIds[w.id] = true; });
+  needsReviewWords.forEach(function (w) {
+    if (!existingIds[w.id]) { words.push(w); existingIds[w.id] = true; }
+  });
+
+  if (words.length === 0) {
+    showToast('没有需要复习的单词', 'error');
+    return;
+  }
+
+  // Apply mode
+  if (mode === 'random') {
+    words = shuffleArray(words.slice());
+  } else {
+    // Sequential: newest first
+    words = words.slice().sort(function (a, b) { return b.date.localeCompare(a.date); });
+  }
+
+  // Limit count
+  if (words.length > reviewCount) {
+    words = words.slice(0, reviewCount);
+  }
+
+  // Start session
+  reviewSession = {
+    words: words,
+    currentIndex: 0,
+    known: 0,
+    unknown: 0,
+    unknownWords: []
+  };
+
+  document.getElementById('reviewConfig').style.display = 'none';
+  document.getElementById('reviewSession').classList.add('active');
+  document.getElementById('reviewSummary').classList.remove('active');
+  renderCurrentCard();
+}
+
+function shuffleArray(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function renderCurrentCard() {
+  if (!reviewSession) return;
+  var word = reviewSession.words[reviewSession.currentIndex];
+  var total = reviewSession.words.length;
+  var idx = reviewSession.currentIndex + 1;
+
+  document.getElementById('progressText').textContent = idx + ' / ' + total;
+  document.getElementById('progressFill').style.width = ((idx - 1) / total * 100) + '%';
+  document.getElementById('wordDisplay').textContent = word.english;
+  document.getElementById('meaningDisplay').textContent = word.chinese;
+
+  var card = document.getElementById('flashcard');
+  card.classList.remove('flipped');
+
+  document.getElementById('btnKnow').style.display = '';
+  document.getElementById('btnUnknown').style.display = '';
+}
+
+function handleReviewResult(known) {
+  if (!reviewSession) return;
+  var word = reviewSession.words[reviewSession.currentIndex];
+  var today = todayStr();
+
+  // Record review date
+  if (!word.reviews) word.reviews = [];
+  if (word.reviews.indexOf(today) === -1) {
+    word.reviews.push(today);
+  }
+
+  if (known) {
+    word.needsReview = false;
+    reviewSession.known++;
+  } else {
+    word.needsReview = true;
+    reviewSession.unknown++;
+    reviewSession.unknownWords.push(word);
+  }
+
+  reviewSession.currentIndex++;
+
+  if (reviewSession.currentIndex >= reviewSession.words.length) {
+    finishReview();
+  } else {
+    renderCurrentCard();
+  }
+  saveData();
+  updateEbbinghausBadge();
+}
+
+function finishReview() {
+  document.getElementById('reviewSession').classList.remove('active');
+  document.getElementById('reviewSummary').classList.add('active');
+
+  document.getElementById('knownCount').textContent = reviewSession.known;
+  document.getElementById('unknownCount').textContent = reviewSession.unknown;
+
+  var unknownSection = document.getElementById('unknownWordsSection');
+  var unknownList = document.getElementById('unknownWordsList');
+  if (reviewSession.unknownWords.length > 0) {
+    unknownSection.style.display = 'block';
+    unknownList.innerHTML = reviewSession.unknownWords.map(function (w) {
+      return '<span class="tag">' + escapeHTML(w.english) + ' — ' + escapeHTML(w.chinese) + '</span>';
+    }).join('');
+  } else {
+    unknownSection.style.display = 'none';
+  }
+  reviewSession = null;
+}
+
+function resetReviewUI() {
+  document.getElementById('reviewConfig').style.display = '';
+  document.getElementById('reviewSession').classList.remove('active');
+  document.getElementById('reviewSummary').classList.remove('active');
+  reviewSession = null;
+}
+
+// ==================== EVENT HANDLERS ====================
+
+// --- Add Word ---
+document.getElementById('addWordBtn').addEventListener('click', addWord);
+document.getElementById('wordInput').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') addWord();
+});
+
+async function addWord() {
+  var input = document.getElementById('wordInput');
+  var word = input.value.trim();
+  if (!word) { showToast('请输入英文单词', 'error'); return; }
+  if (!/^[a-zA-Z\s\-']+$/.test(word)) {
+    showToast('请输入有效的英文单词', 'error'); return;
+  }
+
+  // Check duplicates
+  var exists = appData.words.some(function (w) {
+    return w.english.toLowerCase() === word.toLowerCase();
+  });
+  if (exists) { showToast('该单词已存在', 'error'); return; }
+
+  input.disabled = true;
+  document.getElementById('addWordBtn').disabled = true;
+  showToast('正在翻译...', '');
+
+  var translation = await translateWord(word);
+
+  input.disabled = false;
+  document.getElementById('addWordBtn').disabled = false;
+
+  if (translation) {
+    // Auto-add with API translation
+    appData.words.push({
+      id: generateId(),
+      english: word,
+      chinese: translation,
+      date: todayStr(),
+      needsReview: false,
+      reviews: []
+    });
+    saveData();
+    input.value = '';
+    showToast('已添加：' + word + ' → ' + translation, 'success');
+    refreshAllUI();
+  } else {
+    // Show manual input modal
+    pendingManualWord = word;
+    document.getElementById('manualModalWord').textContent =
+      '「' + word + '」自动翻译失败，请手动输入中文释义：';
+    document.getElementById('manualChineseInput').value = '';
+    document.getElementById('manualModal').classList.remove('hidden');
+    document.getElementById('manualChineseInput').focus();
+  }
+}
+
+document.getElementById('confirmManualBtn').addEventListener('click', function () {
+  var chinese = document.getElementById('manualChineseInput').value.trim();
+  if (!chinese) { showToast('请输入中文释义', 'error'); return; }
+  if (!pendingManualWord) return;
+  appData.words.push({
+    id: generateId(),
+    english: pendingManualWord,
+    chinese: chinese,
+    date: todayStr(),
+    needsReview: false,
+    reviews: []
+  });
+  saveData();
+  document.getElementById('manualModal').classList.add('hidden');
+  document.getElementById('wordInput').value = '';
+  pendingManualWord = null;
+  showToast('已手动添加单词', 'success');
+  refreshAllUI();
+});
+
+document.getElementById('manualChineseInput').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') document.getElementById('confirmManualBtn').click();
+});
+
+document.getElementById('cancelManualBtn').addEventListener('click', function () {
+  document.getElementById('manualModal').classList.add('hidden');
+  pendingManualWord = null;
+});
+
+// Close modal on overlay click
+document.getElementById('manualModal').addEventListener('click', function (e) {
+  if (e.target === this) { this.classList.add('hidden'); pendingManualWord = null; }
+});
+
+// --- Vocab Filter Pills ---
+document.getElementById('vocabFilterBar').addEventListener('click', function (e) {
+  if (!e.target.classList.contains('filter-pill')) return;
+  this.querySelectorAll('.filter-pill').forEach(function (b) { b.classList.remove('active'); });
+  e.target.classList.add('active');
+  renderWordList();
+});
+
+// --- Word List Delete (event delegation) ---
+document.getElementById('wordList').addEventListener('click', function (e) {
+  var btn = e.target.closest('.delete-btn');
+  if (!btn) return;
+  var id = btn.dataset.id;
+  if (confirm('确定要删除这个单词吗？此操作不可恢复。')) {
+    appData.words = appData.words.filter(function (w) { return w.id !== id; });
+    saveData();
+    refreshAllUI();
+    showToast('单词已删除', 'success');
+  }
+});
+
+// --- Ebbinghaus Badge ---
+document.getElementById('ebbinghausBadge').addEventListener('click', function () {
+  // Switch to review tab with Ebbinghaus filter
+  switchTab('review');
+  document.querySelectorAll('#reviewFilterBar .filter-pill').forEach(function (b) { b.classList.remove('active'); });
+  var ebbinghausPill = document.querySelector('#reviewFilterBar [data-filter="ebbinghaus"]');
+  if (ebbinghausPill) ebbinghausPill.classList.add('active');
+});
+
+// --- Review Filter Pills ---
+document.getElementById('reviewFilterBar').addEventListener('click', function (e) {
+  if (!e.target.classList.contains('filter-pill')) return;
+  this.querySelectorAll('.filter-pill').forEach(function (b) { b.classList.remove('active'); });
+  e.target.classList.add('active');
+});
+
+// --- Mode Toggle ---
+document.getElementById('modeToggle').addEventListener('click', function (e) {
+  if (e.target.tagName !== 'BUTTON') return;
+  this.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+  e.target.classList.add('active');
+  appData.settings.reviewMode = e.target.dataset.mode;
+  saveData();
+});
+
+// --- Start Review ---
+document.getElementById('startReviewBtn').addEventListener('click', function () {
+  appData.settings.reviewCount = parseInt(document.getElementById('reviewCountInput').value) || 100;
+  saveData();
+  startReview();
+});
+
+// --- Flashcard Flip ---
+document.getElementById('flashcardContainer').addEventListener('click', function () {
+  if (!reviewSession) return;
+  var card = document.getElementById('flashcard');
+  card.classList.toggle('flipped');
+});
+
+// --- Speak Button ---
+document.getElementById('speakBtn').addEventListener('click', function (e) {
+  e.stopPropagation();
+  if (!reviewSession) return;
+  var word = reviewSession.words[reviewSession.currentIndex];
+  speakWord(word.english);
+});
+
+// --- Review Action Buttons ---
+document.getElementById('btnKnow').addEventListener('click', function () {
+  if (!reviewSession) return;
+  handleReviewResult(true);
+});
+
+document.getElementById('btnUnknown').addEventListener('click', function () {
+  if (!reviewSession) return;
+  handleReviewResult(false);
+});
+
+// --- Back to Config ---
+document.getElementById('backToConfigBtn').addEventListener('click', function () {
+  resetReviewUI();
+  refreshAllUI();
+});
+
+// --- Export ---
+document.getElementById('exportBtn').addEventListener('click', exportData);
+
+// --- Import ---
+document.getElementById('importBtn').addEventListener('click', function () {
+  document.getElementById('importFileInput').click();
+});
+
+document.getElementById('importFileInput').addEventListener('change', function () {
+  var file = this.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    importData(e.target.result);
+  };
+  reader.readAsText(file);
+  this.value = '';
+});
+
+// --- Theme Toggle ---
+document.getElementById('themeToggle').addEventListener('click', function () {
+  appData.settings.theme = appData.settings.theme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+  saveData();
+});
+
+function applyTheme() {
+  if (appData.settings.theme === 'dark') {
+    document.documentElement.classList.add('dark');
+    document.getElementById('themeToggle').textContent = '☀️';
+    document.querySelector('meta[name="theme-color"]').content = '#1a1a2e';
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.getElementById('themeToggle').textContent = '🌓';
+    document.querySelector('meta[name="theme-color"]').content = '#4a90d9';
+  }
+}
+
+// --- Bottom Nav ---
+document.querySelector('.bottom-nav').addEventListener('click', function (e) {
+  var btn = e.target.closest('.nav-btn');
+  if (!btn) return;
+  switchTab(btn.dataset.tab);
+});
+
+function switchTab(tabName) {
+  // Update nav
+  document.querySelectorAll('.nav-btn').forEach(function (b) { b.classList.remove('active'); });
+  var navBtn = document.querySelector('.nav-btn[data-tab="' + tabName + '"]');
+  if (navBtn) navBtn.classList.add('active');
+
+  // Update content
+  document.querySelectorAll('.tab-content').forEach(function (s) { s.classList.remove('active'); });
+  var tabContent = document.getElementById('tab-' + tabName);
+  if (tabContent) {
+    tabContent.classList.add('active');
+    // Refresh content when switching tabs
+    if (tabName === 'vocab') refreshAllUI();
+    if (tabName === 'backup') updateBackupStats();
+    if (tabName === 'review') {
+      resetReviewUI();
+      updateEbbinghausBadge();
+    }
+  }
+}
+
+// --- Install Banner ---
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.remove('hidden');
+});
+
+document.getElementById('installBtn').addEventListener('click', async function () {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    var result = await deferredPrompt.userChoice;
+    console.log('PWA install result:', result.outcome);
+    deferredPrompt = null;
+  }
+  document.getElementById('installBanner').classList.add('hidden');
+});
+
+document.getElementById('dismissBannerBtn').addEventListener('click', function () {
+  document.getElementById('installBanner').classList.add('hidden');
+});
+
+// ==================== PWA SETUP ====================
+
+// --- Dynamic Web App Manifest ---
+function setupManifest() {
+  var manifest = {
+    name: '单词记忆本',
+    short_name: '单词本',
+    description: '智能背单词 PWA 应用',
+    start_url: location.href.split('?')[0],
+    display: 'standalone',
+    orientation: 'any',
+    background_color: '#ffffff',
+    theme_color: '#4a90d9',
+    categories: ['education', 'productivity'],
+    icons: [{
+      src: 'data:image/svg+xml,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">' +
+        '<rect width="192" height="192" rx="36" fill="#4a90d9"/>' +
+        '<text x="96" y="130" font-size="110" text-anchor="middle" fill="white" font-family="sans-serif">📘</text>' +
+        '</svg>'
+      ),
+      sizes: '192x192',
+      type: 'image/svg+xml',
+      purpose: 'any maskable'
+    }, {
+      src: 'data:image/svg+xml,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">' +
+        '<rect width="512" height="512" rx="96" fill="#4a90d9"/>' +
+        '<text x="256" y="346" font-size="280" text-anchor="middle" fill="white" font-family="sans-serif">📘</text>' +
+        '</svg>'
+      ),
+      sizes: '512x512',
+      type: 'image/svg+xml',
+      purpose: 'any maskable'
+    }]
+  };
+  var blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = url;
+  document.head.appendChild(link);
+}
+
+// --- Service Worker ---
+function setupServiceWorker() {
+  if (!('serviceWorker' in navigator)) {
+    console.log('Service Worker not supported in this browser');
+    return;
+  }
+  navigator.serviceWorker.register('./sw.js', { scope: '/' }).then(function (reg) {
+    console.log('✅ Service Worker registered:', reg.scope);
+  }).catch(function (err) {
+    console.warn('⚠️ SW registration failed:', err.message);
+    console.warn('💡 PWA offline support requires HTTPS or localhost');
+  });
+}
+
+// --- iOS Standalone Detection ---
+function isIOSStandalone() {
+  return ('standalone' in window.navigator) && window.navigator.standalone;
+}
+
+// ==================== INITIALIZATION ====================
+function init() {
+  // Load data
+  appData = loadData();
+
+  // Apply theme
+  applyTheme();
+
+  // Load settings into UI
+  document.getElementById('reviewCountInput').value = appData.settings.reviewCount || 100;
+  var modeBtn = document.querySelector('#modeToggle button[data-mode="' + appData.settings.reviewMode + '"]');
+  if (modeBtn) {
+    document.querySelectorAll('#modeToggle button').forEach(function (b) { b.classList.remove('active'); });
+    modeBtn.classList.add('active');
+  }
+
+  // Setup PWA
+  setupManifest();
+  setupServiceWorker();
+
+  // Initial render
+  refreshAllUI();
+
+  // Hide install banner if already in standalone mode
+  if (isIOSStandalone() || window.matchMedia('(display-mode: standalone)').matches) {
+    document.getElementById('installBanner').classList.add('hidden');
+  }
+
+  console.log('📘 单词记忆本 PWA 已就绪');
+  console.log('   📝 单词总数:', appData.words.length);
+  console.log('   🎨 主题:', appData.settings.theme);
+  console.log('   📱 独立模式:', isIOSStandalone() || window.matchMedia('(display-mode: standalone)').matches);
+}
+
+// Start the app
+init();
+</script>
+</body>
+</html>
